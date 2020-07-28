@@ -91,6 +91,7 @@ def custom_eval_function(trainer, eval_workers):
         metrics (dict): evaluation metrics dict.
     """
 
+    print("*************** Evaluation start... ***************")
     # We configured 2 eval workers in the training config.
     # worker_1, worker_2 = eval_workers.remote_workers()
 
@@ -103,7 +104,6 @@ def custom_eval_function(trainer, eval_workers):
     # worker_1.foreach_env.remote(lambda env: env.eval_set(start_day=51))
     # worker_2.foreach_env.remote(lambda env: env.eval_set(start_day=52))
 
-    print("Evaluation start...")
     # Calling .sample() runs exactly one episode per worker due to how the
     # eval workers are configured.
     ray.get([w.sample.remote() for w in eval_workers.remote_workers()])
@@ -121,6 +121,8 @@ def custom_eval_function(trainer, eval_workers):
 
     # You can also put custom values in the metrics dict.
     metrics["foo"] = 1
+
+    print("*************** Evaluation end. ***************")
     return metrics
 
 
@@ -148,7 +150,7 @@ tune.run(
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        "evaluation_interval": 1,
+        "evaluation_interval": 15,
         # Run 1 episodes each time evaluation runs.
         "evaluation_num_episodes": 1,
         })
