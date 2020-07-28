@@ -2,9 +2,10 @@
 
 
 game_ray/
-    - rl_game/
-    - ppo.py
-    - trading_env.py
+
+    * rl_game/
+    * ppo.py
+    * trading_env.py
 
 pip install ray[rllib] requests
 
