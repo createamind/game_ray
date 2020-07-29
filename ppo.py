@@ -34,10 +34,12 @@ parser.add_argument('--delay_len', type=int, default=30)
 parser.add_argument('--target_clip', type=int, default=5)
 parser.add_argument('--auto_follow', type=int, default=0)
 parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=3)
+parser.add_argument('--action_repeat', type=int, default=1)
 parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
                     help="26 without alive info, 38 with alive info.")
 parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
+parser.add_argument("--stop-timesteps", type=int, default=5e8)
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
 # parser.add_argument('--num_stack', type=int, default=2)
 # parser.add_argument('--num_stack_jump', type=int, default=3)
@@ -159,6 +161,7 @@ if __name__ == "__main__":
             "data_v": args.data_v,
             "obs_dim": args.obs_dim,
             "action_scheme_id": args.action_scheme_id,
+            "action_repeat": args.action_repeat,
             "target_scale": args.target_scale,
             "score_scale": args.score_scale,
             "profit_scale": args.profit_scale,
@@ -286,6 +289,11 @@ if __name__ == "__main__":
         "num_gpus_per_worker": 0,
     }
 
-    tune.run("PPO", config=config)
+    stop = {
+        # "training_iteration": args.stop_iters,
+        "timesteps_total": args.stop_timesteps,
+    }
+
+    tune.run("PPO", config=config, stop=stop)
 
     ray.shutdown()

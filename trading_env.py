@@ -45,7 +45,7 @@ data_v19_len = [
 
 class TradingEnv(gym.Env):
 
-    def __init__(self, data_v, obs_dim=26, action_scheme_id=3,
+    def __init__(self, data_v, obs_dim=26, action_scheme_id=15, action_repeat=1,
                  target_scale=1, score_scale=1.5, profit_scale=0, action_punish=0.4, delay_len=30, target_clip=5,
                  auto_follow=0, burn_in=3000, max_ep_len=3000, render=False):
         super(TradingEnv, self).__init__()
@@ -76,7 +76,8 @@ class TradingEnv(gym.Env):
         self.rewards = arr1()
         self.rewards_len = arr()
 
-        self._step = self._action_schemes(action_scheme_id)
+        self._actions = self._action_schemes(action_scheme_id)
+        self.action_repeat = action_repeat
         self.auto_follow = auto_follow
 
         self.obs_dim = obs_dim
@@ -155,6 +156,15 @@ class TradingEnv(gym.Env):
         return obs
 
     def step(self, action):
+        reward = 0.0
+        for _ in range(self.action_repeat):
+            obs, r, done, info = self._step(action)
+            reward += r
+            if done:
+                return obs, reward, done, info
+        return obs, reward, done, info
+
+    def _step(self, action):
         last_target = self.raw_obs[26]
         last_bias = self.raw_obs[26] - self.raw_obs[27]
         last_score = self.rewards[0]
@@ -167,7 +177,7 @@ class TradingEnv(gym.Env):
                 else:
                     action = 10
 
-        self._step(action)
+        self._actions(action)
         self.expso.Step(self.ctx)
         self.expso.GetInfo(self.ctx, self.raw_obs, self.raw_obs_len)
         self.expso.GetReward(self.ctx, self.rewards, self.rewards_len)
@@ -413,8 +423,8 @@ class FrameStack(gym.Wrapper):
             self.observation_space = Box(-np.inf, np.inf, shape=(frame_stack, self.env.observation_space.shape[0]),
                                          dtype=np.float32)
 
-    def reset(self, ap=None, ss=None, start_day=None):
-        ob = self.env.reset(ap=ap, ss=ss, start_day=start_day)
+    def reset(self):
+        ob = self.env.reset()
         ob = np.float32(ob)
         for _ in range(self.total_frame):
             self.frames.append(ob)
