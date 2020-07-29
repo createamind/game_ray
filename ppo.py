@@ -23,15 +23,15 @@ parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
                     help="r12 have 62days, r19 have 120days.")
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 600,500,500,500,500,500])
 parser.add_argument('--gamma', type=float, default=0.8)
-parser.add_argument('--num_workers', type=int, default=80)
-parser.add_argument('--train_batch_size', type=int, default=1600000)
+parser.add_argument('--num_workers', type=int, default=100)
+parser.add_argument('--train_batch_size', type=int, default=30000)
 parser.add_argument('--target_scale', type=float, default=0)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
 parser.add_argument('--ap', type=float, default=0)
 parser.add_argument('--burn_in', type=int, default=3000)
-parser.add_argument('--delay_len', type=int, default=30)
-parser.add_argument('--target_clip', type=int, default=5)
+parser.add_argument('--delay_len', type=int, default=0)
+parser.add_argument('--target_clip', type=int, default=10000000000)
 parser.add_argument('--auto_follow', type=int, default=16)
 parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=15)
 parser.add_argument('--action_repeat', type=int, default=250)
@@ -232,12 +232,12 @@ if __name__ == "__main__":
 
         # Total SGD batch size across all devices for SGD. This defines the
         # minibatch size within each epoch.
-        "sgd_minibatch_size": 128,
+        "sgd_minibatch_size": 5000,
         # Whether to shuffle sequences in the batch when training (recommended).
         "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
         # execute per train batch).
-        "num_sgd_iter": 30,
+        "num_sgd_iter": 10,
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
@@ -303,6 +303,6 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    tune.run("APPO", config=config, stop=stop)
+    tune.run("PPO", config=config, stop=stop)
 
     ray.shutdown()
