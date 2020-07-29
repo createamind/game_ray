@@ -45,6 +45,7 @@ data_v19_len = [
 class TradingEnv(gym.Env):
 
     def __init__(self, env_config):
+        print(env_config)
         super(TradingEnv, self).__init__()
 
         self.data_v = env_config['data_v']
@@ -133,7 +134,7 @@ class TradingEnv(gym.Env):
             burn_in = self.burn_in
 
         start_info = {"date_index": "{} - {}".format(start_day, start_day), "skip_steps": start_skip}
-        print(start_info)
+        #print(start_info)
         if self.ctx:
             self.close_env()
         self.ctx = self.expso.CreateContext(json.dumps(start_info).encode())
@@ -162,6 +163,17 @@ class TradingEnv(gym.Env):
         last_bias = self.raw_obs[26] - self.raw_obs[27]
         last_score = self.rewards[0]
         last_profit = self.rewards[1] - self.rewards[3]
+
+
+        actionfoll = action 
+        if True :
+            action  = 0
+            if abs(last_bias) > actionfoll :
+                if last_bias > 0:
+                    action = 5
+                else:
+                    action = 10
+
 
         if self.auto_follow is not 0:
             if abs(last_bias) > self.auto_follow:
