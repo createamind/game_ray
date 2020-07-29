@@ -41,8 +41,8 @@ parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
-# parser.add_argument('--num_stack', type=int, default=2)
-# parser.add_argument('--num_stack_jump', type=int, default=3)
+parser.add_argument('--num_stack', type=int, default=1)
+parser.add_argument('--num_stack_jump', type=int, default=3)
 # parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
 
 
@@ -155,8 +155,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     ray.init()
 
+    if args.num_stack > 1:
+        env = FrameStack
+    else:
+        env = TradingEnv
+
     config = {
-        "env": TradingEnv,
+        "env": env,
         "env_config": {
             "data_v": args.data_v,
             "obs_dim": args.obs_dim,
@@ -170,7 +175,10 @@ if __name__ == "__main__":
             "target_clip": args.target_clip,
             "auto_follow": args.auto_follow,
             "burn_in": args.burn_in,
-            "max_ep_len": args.max_ep_len
+            "max_ep_len": args.max_ep_len,
+            "frame_stack": args.num_stack,
+            "jump": args.num_stack_jump,
+            "model": 'mlp'
         },
         "callbacks": MyCallbacks,
 

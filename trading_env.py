@@ -11,7 +11,6 @@ import pandas as pd
 import pickle
 import time
 
-
 info_names = [
     "Done", "LastPrice", "BidPrice1", "BidVolume1", "AskPrice1", "AskVolume1", "BidPrice2", "BidVolume2",
     "AskPrice2", "AskVolume2", "BidPrice3", "BidVolume3", "AskPrice3", "AskVolume3", "BidPrice4",
@@ -45,12 +44,10 @@ data_v19_len = [
 
 class TradingEnv(gym.Env):
 
-    def __init__(self, data_v, obs_dim=26, action_scheme_id=15, action_repeat=1,
-                 target_scale=1, score_scale=1.5, profit_scale=0, action_punish=0.4, delay_len=30, target_clip=5,
-                 auto_follow=0, burn_in=3000, max_ep_len=3000, render=False):
+    def __init__(self, env_config):
         super(TradingEnv, self).__init__()
 
-        self.data_v = data_v
+        self.data_v = env_config['data_v']
 
         if self.data_v == "r19":
             self.data_len = data_v19_len
@@ -76,32 +73,31 @@ class TradingEnv(gym.Env):
         self.rewards = arr1()
         self.rewards_len = arr()
 
-        self._actions = self._action_schemes(action_scheme_id)
-        self.action_repeat = action_repeat
-        self.auto_follow = auto_follow
+        self._actions = self._action_schemes(env_config['action_scheme_id'])
+        self.action_repeat = env_config['action_repeat']
+        self.auto_follow = env_config['auto_follow']
 
-        self.obs_dim = obs_dim
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32)
+        self.ori_obs_dim = env_config['obs_dim']
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.ori_obs_dim,), dtype=np.float32)
 
-        self.max_ep_len = max_ep_len
+        self.max_ep_len = env_config['max_ep_len']
         self.ep_len = 0
-        self.render = render
 
         self.his_price = deque(maxlen=30)
 
         # target
-        self.target_diff = deque(maxlen=delay_len)  # target delay setting
-        self.target_clip = target_clip
+        self.target_diff = deque(maxlen=env_config['delay_len'])  # target delay setting
+        self.target_clip = env_config['target_clip']
         # reward
-        self.target_scale = target_scale
-        self.score_scale = score_scale
-        self.profit_scale = profit_scale
-        assert not (score_scale != 0 and profit_scale != 0), "score_scale and profit_scale must have one equal to 0"
-        if profit_scale != 0:
+        self.target_scale = env_config['target_scale']
+        self.score_scale = env_config['score_scale']
+        self.profit_scale = env_config['profit_scale']
+        assert not (self.score_scale != 0 and self.profit_scale != 0), "score_scale and profit_scale must have one equal to 0"
+        if self.profit_scale != 0:
             burn_in = 0
-        self.ap = action_punish
+        self.ap = env_config['action_punish']
         # env reset
-        self.burn_in = burn_in
+        self.burn_in = env_config['burn_in']
         # statistic
         self.act_sta = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0,
                         15: 0, 16: 0}
@@ -149,9 +145,6 @@ class TradingEnv(gym.Env):
         self.ep_len = 0
 
         obs = self._get_obs(self.raw_obs)
-
-        if self.render:
-            self.rendering()
 
         return obs
 
@@ -240,9 +233,6 @@ class TradingEnv(gym.Env):
                 "target_total_tolerance": target_tolerance + self.target_clip,
                 }
 
-        if self.render:
-            self.rendering(action)
-
         self.his_price.append(obs[0])
         obs[22] = max(self.his_price)
         obs[23] = min(self.his_price)
@@ -284,17 +274,18 @@ class TradingEnv(gym.Env):
                 total_volume_max - total_volume_mean)
         obs[target_filter] = (obs[target_filter] - target_mean) / (target_max - target_mean)
 
-        if self.obs_dim == 38:
+        if self.ori_obs_dim == 38:
             obs = np.delete(obs, [0, 25, 34, 35, 42, 43])
-        elif self.obs_dim == 26:
+        elif self.ori_obs_dim == 26:
             obs = obs[:28]
             obs = np.delete(obs, [0, 25])
-        elif self.obs_dim == 24:
+        elif self.ori_obs_dim == 24:
             obs = obs[:25]
             obs = np.delete(obs, [0])
-        elif self.obs_dim == 2:
+        elif self.ori_obs_dim == 2:
             obs = obs[26:28]
         else:
+            print(obs.shape)
             assert False, "incorrect obs_dim!"
         obs[obs < -1] = -1
         obs[obs > 1] = 1
@@ -375,63 +366,36 @@ class TradingEnv(gym.Env):
             action = 0
         return action
 
-    def rendering(self, action=None):
-        print("-----------------------")
-        print("Action:", action)
-        print("AliveAskPriceNUM:", self.raw_obs[42])
-        print("AliveAskVolumeNUM:", self.raw_obs[43])
-        print("AliveAskPrice3:", self.raw_obs[40])
-        print("AliveAskVolume3:", self.raw_obs[41])
-        print("AliveAskPrice2:", self.raw_obs[38])
-        print("AliveAskVolume2:", self.raw_obs[39])
-        print("AliveAskPrice1:", self.raw_obs[36])
-        print("AliveAskVolume1:", self.raw_obs[37])
-        print("AskPrice1:", self.raw_obs[4])
-        print("AskVolume1:", self.raw_obs[5])
-        print(".....")
-        print("LastPrice:", self.raw_obs[1])
-        print("Actual_Num:", self.raw_obs[27])
-        print(".....")
-        print("BidPrice1:", self.raw_obs[2])
-        print("BidVolume1:", self.raw_obs[3])
-        print("AliveBidPrice1:", self.raw_obs[28])
-        print("AliveBidVolume1:", self.raw_obs[29])
-        print("AliveBidPrice2:", self.raw_obs[30])
-        print("AliveBidVolume2:", self.raw_obs[31])
-        print("AliveBidPrice3:", self.raw_obs[32])
-        print("AliveBidVolume3:", self.raw_obs[33])
-        print("AliveBidPriceNUM:", self.raw_obs[34])
-        print("AliveBidVolumeNUM:", self.raw_obs[35])
-        print("-----------------------")
-
     def close_env(self):
         self.expso.ReleaseContext(self.ctx)
 
 
-class FrameStack(gym.Wrapper):
-    def __init__(self, env, frame_stack, jump=1, model='mlp'):
-        super(FrameStack, self).__init__(env)
-        self.frame_stack = frame_stack
-        self.jump = jump
-        self.model = model
-        self.total_frame = frame_stack * jump
+class FrameStack(TradingEnv):
+    def __init__(self, env_config):
+        super().__init__(env_config)
+
+        self.frame_stack = env_config['frame_stack']
+        self.jump = env_config['jump']
+        self.model = env_config['model']
+
+        self.total_frame = self.frame_stack * self.jump
         self.frames = deque([], maxlen=self.total_frame)
-        if model == 'mlp':
-            self.obs_dim = self.env.observation_space.shape[0] * frame_stack
+        if self.model == 'mlp':
+            self.obs_dim = self.observation_space.shape[0] * self.frame_stack
             self.observation_space = Box(-np.inf, np.inf, shape=(self.obs_dim,), dtype=np.float32)
         else:
-            self.observation_space = Box(-np.inf, np.inf, shape=(frame_stack, self.env.observation_space.shape[0]),
+            self.observation_space = Box(-np.inf, np.inf, shape=(self.frame_stack, self.observation_space.shape[0]),
                                          dtype=np.float32)
 
     def reset(self):
-        ob = self.env.reset()
+        ob = super().reset()
         ob = np.float32(ob)
         for _ in range(self.total_frame):
             self.frames.append(ob)
         return self.observation()
 
     def step(self, action):
-        ob, reward, done, info = self.env.step(action)
+        ob, reward, done, info = super().step(action)
         ob = np.float32(ob)
         self.frames.append(ob)
         return self.observation(), reward, done, info
@@ -449,9 +413,26 @@ class FrameStack(gym.Wrapper):
 
 if __name__ == "__main__":
 
-    env = TradingEnv(data_v="r19")
+    env_config = {
+        "data_v": 'r12',
+        "obs_dim": 38,
+        "action_scheme_id": 15,
+        "action_repeat": 1,
+        "target_scale": 1,
+        "score_scale": 2,
+        "profit_scale": 0,
+        "action_punish": 0.4,
+        "delay_len": 30,
+        "target_clip": 5,
+        "auto_follow": 0,
+        "burn_in": 3000,
+        "max_ep_len": 3000,
+        "frame_stack": 3,
+        "jump": 3,
+        "model": 'mlp'
+    }
 
-    env = FrameStack(env, frame_stack=3, jump=3, model="mlp")
+    env = FrameStack(env_config)
 
     print(env.obs_dim, env.action_space)
 
@@ -466,7 +447,7 @@ if __name__ == "__main__":
             action = env.action_space.sample()
             obs, reward, done, info = env.step(action)
             step += 1
-            print(step, obs)
+            print(step, obs, obs.shape)
             if done or step == 100:
                 print(step, 'time:', time.time() - t0)
                 break
