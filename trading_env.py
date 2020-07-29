@@ -118,12 +118,7 @@ class TradingEnv(gym.Env):
         self.eval = True
         self.start_day = start_day
 
-    def reset(self, ap=None, ss=None, start_day=None):
-
-        if ap is not None:
-            self.ap = ap
-        if ss is not None:
-            self.score_scale = ss
+    def reset(self):
 
         self.act_sta = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0, 13: 0, 14: 0,
                         15: 0, 16: 0}
@@ -181,6 +176,8 @@ class TradingEnv(gym.Env):
         obs = self._get_obs(self.raw_obs)
         if self.eval:
             done = bool(self.raw_obs[0])
+            if done:
+                self.eval = False
         else:
             done = bool(self.raw_obs[0]) or self.ep_len == self.max_ep_len
 
