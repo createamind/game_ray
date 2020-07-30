@@ -3,6 +3,8 @@ import argparse
 import ray
 from ray import tune
 from utils import MyCallbacks, custom_eval_function
+import ray.rllib.agents.ppo as ppo
+from ray.tune.logger import pretty_print
 
 import os
 import sys
@@ -192,16 +194,26 @@ if __name__ == "__main__":
         # "num_gpus_per_worker": 0,
     }
 
-    stop = {
-        # "training_iteration": args.stop_iters,
-        "timesteps_total": args.stop_timesteps,
-    }
+    print(pretty_print(config))
 
-    print(config)
+    trainer = ppo.PPOTrainer(
+        config=config
+    )
 
-    tune.run("PPO",
-             checkpoint_freq=30,
-             config=config,
-             stop=stop)
+    # agent = ppo.PPOTrainer(config=config)
+    # agent.restore(checkpoint_path)
+
+    min_score = 150
+
+    for i in range(100000000):
+        # Perform one iteration of training the policy with PPO
+        result = trainer.train()
+        print(pretty_print(result))
+        if 'evaluation' in result.keys():
+            test_score = result['evaluation']['custom_metrics']['ep_score_mean']
+            if test_score < min_score:
+                checkpoint = trainer.save(ROOT+'/ray_results/PPO-train/'+str(test_score))
+                print("checkpoint saved at", checkpoint)
+                min_score = test_score
 
     ray.shutdown()

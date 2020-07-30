@@ -107,7 +107,7 @@ def custom_eval_function(trainer, eval_workers):
     #                           eval_workers.remote_workers())
 
     # You can also put custom values in the metrics dict.
-    metrics["foo"] = 1
+    # metrics["foo"] = 1
     total_time = time.time()-start_time
     print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time/60))
     print("*************** Evaluation end. ***************")
