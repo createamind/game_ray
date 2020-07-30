@@ -24,7 +24,7 @@ parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 600,500,500,500,500,500])
 parser.add_argument('--gamma', type=float, default=0.8)
 parser.add_argument('--num_workers', type=int, default=100)
-parser.add_argument('--train_batch_size', type=int, default=30000)
+parser.add_argument('--train_batch_size', type=int, default=20000)
 parser.add_argument('--target_scale', type=float, default=0)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
@@ -40,7 +40,7 @@ parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,
 parser.add_argument('--max_ep_len', type=int, default=300)
 parser.add_argument('--lr', type=float, default=4e-5)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
-parser.add_argument('--entropy', type=float, default=0.97, help="alpha > 0， 1.5，3.5.. enable sppo.")
+parser.add_argument('--entropy', type=float, default=0.57, help="alpha > 0， 1.5，3.5.. enable sppo.")
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
 parser.add_argument('--num_stack', type=int, default=15)
 parser.add_argument('--num_stack_jump', type=int, default=1)
@@ -232,12 +232,12 @@ if __name__ == "__main__":
 
         # Total SGD batch size across all devices for SGD. This defines the
         # minibatch size within each epoch.
-        "sgd_minibatch_size": 5000,
+        "sgd_minibatch_size": 10000,
         # Whether to shuffle sequences in the batch when training (recommended).
         "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
         # execute per train batch).
-        "num_sgd_iter": 10,
+        "num_sgd_iter": 30,
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
