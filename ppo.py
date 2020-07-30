@@ -25,6 +25,7 @@ parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 60
 parser.add_argument('--gamma', type=float, default=0.8)
 parser.add_argument('--num_workers', type=int, default=100)
 parser.add_argument('--train_batch_size', type=int, default=20000)
+parser.add_argument('--sgd_minibatch_size', type=int, default=15000)
 parser.add_argument('--target_scale', type=float, default=0)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
@@ -232,7 +233,7 @@ if __name__ == "__main__":
 
         # Total SGD batch size across all devices for SGD. This defines the
         # minibatch size within each epoch.
-        "sgd_minibatch_size": 10000,
+        "sgd_minibatch_size": args.sgd_minibatch_size,
         # Whether to shuffle sequences in the batch when training (recommended).
         "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
