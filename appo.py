@@ -4,6 +4,7 @@ import ray
 from ray import tune
 from utils import MyCallbacks, custom_eval_function
 
+
 import os
 import sys
 
@@ -16,8 +17,8 @@ parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',
                     help="r12 have 62days, r19 have 120days.")
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 600])
 parser.add_argument('--gamma', type=float, default=0.998)
-parser.add_argument('--num_workers', type=int, default=32)
-parser.add_argument('--train_batch_size', type=int, default=18000)
+parser.add_argument('--num_workers', type=int, default=12)
+parser.add_argument('--train_batch_size', type=int, default=9000)
 parser.add_argument('--target_scale', type=float, default=1)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
@@ -69,96 +70,65 @@ if __name__ == "__main__":
             "model": 'mlp'
         },
         "callbacks": MyCallbacks,
-
         "num_workers": args.num_workers,
-
         # Number of GPUs to allocate to the trainer process. Note that not all
         # algorithms can take advantage of trainer GPUs. This can be fractional
         # (e.g., 0.3 GPUs).
         "num_gpus": 1,
-
         # Discount factor of the MDP.
         "gamma": args.gamma,
-
-        # Number of steps after which the episode is forced to terminate. Defaults
-        # to `env.spec.max_episode_steps` (if present) for Gym envs.
-        # "horizon": None,
-        # Calculate rewards but don't reset the environment when the horizon is
-        # hit. This allows value estimation and RNN state to span across logical
-        # episodes denoted by horizon. This only has an effect if horizon != inf.
-        # "soft_horizon": False,
-        # Don't set 'done' at the end of the episode. Note that you still need to
-        # set this if soft_horizon=True, unless your env is actually running
-        # forever without returning done=True.
-        # "no_done_at_end": False,
-
         # "model": {"use_lstm": True},
         "model": {"fcnet_hiddens": args.hidden_sizes},
 
-        # PPO-specific configs
+
+        # APPO-specific configs
+        # Whether to use V-trace weighted advantages. If false, PPO GAE advantages
+        # will be used instead.
+        "vtrace": False,
+
+        # == These two options only apply if vtrace: False ==
         # Should use a critic as a baseline (otherwise don't use value baseline;
         # required for using GAE).
-        # "use_critic": True,
+        "use_critic": True,
         # If true, use the Generalized Advantage Estimator (GAE)
         # with a value function, see https://arxiv.org/pdf/1506.02438.pdf.
-        # "use_gae": True,
-        # The GAE(lambda) parameter.
+        "use_gae": True,
+        # GAE(lambda) parameter
         "lambda": 0.97,
-        # Initial coefficient for KL divergence.
-        # "kl_coeff": 0.2,
 
-        # Size of batches collected from each worker.
-        # "rollout_fragment_length": 200,
+        # == PPO surrogate loss options ==
+        "clip_param": 0.3,
 
-        # Training batch size, if applicable. Should be >= rollout_fragment_length.
-        # Samples batches will be concatenated together to a batch of this size,
-        # which is then passed to SGD.
-        # Number of timesteps collected for each SGD round. This defines the size
-        # of each SGD epoch.
+        # == PPO KL Loss options ==
+        "use_kl_loss": False,
+        "kl_coeff": 1.0,
+        "kl_target": 0.01,
+
+        # == IMPALA optimizer params (see documentation in impala.py) ==
+        "rollout_fragment_length": 200,
         "train_batch_size": args.train_batch_size,
-
-        # Total SGD batch size across all devices for SGD. This defines the
-        # minibatch size within each epoch.
-        "sgd_minibatch_size": 8192,
-        # Whether to shuffle sequences in the batch when training (recommended).
-        # "shuffle_sequences": True,
-        # Number of SGD iterations in each outer loop (i.e., number of epochs to
-        # execute per train batch).
+        "min_iter_time_s": 10,
+        # "num_workers": 2,
+        # "num_gpus": 0,
+        "num_data_loader_buffers": 1,
+        "minibatch_buffer_size": 1,
         "num_sgd_iter": 30,
-        # Stepsize of SGD.
-        "lr": args.lr,
-        # Learning rate schedule.
-        # "lr_schedule": None,
-        # Share layers for value function. If you set this to True, it's important
-        # to tune vf_loss_coeff.
-        # "vf_share_layers": False,
-        # Coefficient of the value function loss. IMPORTANT: you must tune this if
-        # you set vf_share_layers: True.
-        # "vf_loss_coeff": 1.0,
-        # Coefficient of the entropy regularizer.
-        # "entropy_coeff": 0.0,
-        # Decay schedule for the entropy regularizer.
-        # "entropy_coeff_schedule": None,
-        # PPO clip parameter.
-        # "clip_param": 0.3,
-        # Clip param for the value function. Note that this is sensitive to the
-        # scale of the rewards. If your expected V is large, increase this.
-        # "vf_clip_param": 10.0,
-        # If specified, clip the global norm of gradients by this amount.
-        # "grad_clip": None,
-        # Target value for KL divergence.
-        # "kl_target": 0.01,
-        # Whether to rollout "complete_episodes" or "truncate_episodes".
-        # "batch_mode": "truncate_episodes",
-        # Which observation filter to apply to the observation.
-        # "observation_filter": "NoFilter",
-        # Uses the sync samples optimizer instead of the multi-gpu one. This is
-        # usually slower, but you might want to try it if you run into issues with
-        # the default optimizer.
-        # "simple_optimizer": False,
-        # Whether to fake GPUs (using CPUs).
-        # Set this to True for debugging on non-GPU machines (set `num_gpus` > 0).
-        # "_fake_gpus": False,
+        "replay_proportion": 0.0,
+        "replay_buffer_num_slots": 100,
+        "learner_queue_size": 16,
+        "learner_queue_timeout": 300,
+        "max_sample_requests_in_flight_per_worker": 2,
+        "broadcast_interval": 1,
+        "grad_clip": 40.0,
+        "opt_type": "adam",
+        "lr": 4e5,
+        "lr_schedule": None,
+        "decay": 0.99,
+        "momentum": 0.0,
+        "epsilon": 0.1,
+        "vf_loss_coeff": 0.5,
+        "entropy_coeff": 0.01,
+        "entropy_coeff_schedule": None,
 
         # Evaluation setting
         # Note that evaluation is currently not parallelized
@@ -168,21 +138,14 @@ if __name__ == "__main__":
         # process. If you increase this, it will increase the Ray resource usage
         # of the trainer since evaluation workers are created separately from
         # rollout workers.
-        "evaluation_num_workers": 8,
+        "evaluation_num_workers": 4,
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        "evaluation_interval": 6,
+        "evaluation_interval": 15,
         # Run 1 episodes each time evaluation runs.
         "evaluation_num_episodes": 1,
 
-        # === Advanced Resource Settings ===
-        # Number of CPUs to allocate per worker.
-        # "num_cpus_per_worker": 1,
-        # Number of GPUs to allocate per worker. This can be fractional. This is
-        # usually needed only if your env itself requires a GPU (i.e., it is a
-        # GPU-intensive video game), or model inference is unusually expensive.
-        # "num_gpus_per_worker": 0,
     }
 
     stop = {
@@ -190,8 +153,8 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    tune.run("PPO",
-             # checkpoint_freq=50,
+    tune.run("APPO",
+             name="APPOr12",
              config=config,
              stop=stop)
 

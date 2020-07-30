@@ -133,7 +133,7 @@ class TradingEnv(gym.Env):
             burn_in = self.burn_in
 
         start_info = {"date_index": "{} - {}".format(start_day, start_day), "skip_steps": start_skip}
-        print(start_info)
+        # print(start_info)
         if self.ctx:
             self.close_env()
         self.ctx = self.expso.CreateContext(json.dumps(start_info).encode())
