@@ -303,6 +303,10 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    tune.run("PPO", config=config, stop=stop)
+    #tune.run("PPO", config=config, stop=stop)
+    tune.run("PPO",
+             checkpoint_freq=20,
+             config=config,
+             stop=stop)
 
     ray.shutdown()
