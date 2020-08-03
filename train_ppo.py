@@ -3,6 +3,8 @@ import argparse
 import ray
 from ray import tune
 from utils import MyCallbacks, custom_eval_function
+import ray.rllib.agents.ppo as ppo
+from ray.tune.logger import pretty_print
 
 import os
 import sys
@@ -12,33 +14,30 @@ sys.path.append(ROOT)
 from trading_env import TradingEnv, FrameStack
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
+parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',
                     help="r12 have 62days, r19 have 120days.")
-
-parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 600,500,500,500,500,500])
-parser.add_argument('--gamma', type=float, default=0.8)
-parser.add_argument('--num_workers', type=int, default=100)
-parser.add_argument('--train_batch_size', type=int, default=20000)
-parser.add_argument('--sgd_minibatch_size', type=int, default=15000)
-parser.add_argument('--target_scale', type=float, default=0)
+parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 600])
+parser.add_argument('--gamma', type=float, default=0.998)
+parser.add_argument('--num_workers', type=int, default=32)
+parser.add_argument('--train_batch_size', type=int, default=18000)
+parser.add_argument('--target_scale', type=float, default=1)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
-parser.add_argument('--ap', type=float, default=0)
+parser.add_argument('--ap', type=float, default=0.4)
 parser.add_argument('--burn_in', type=int, default=3000)
-parser.add_argument('--delay_len', type=int, default=0)
-parser.add_argument('--target_clip', type=int, default=10000000000)
-parser.add_argument('--auto_follow', type=int, default=16)
-parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=15)
-parser.add_argument('--action_repeat', type=int, default=250)
-parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,
+parser.add_argument('--delay_len', type=int, default=30)
+parser.add_argument('--target_clip', type=int, default=5)
+parser.add_argument('--auto_follow', type=int, default=0)
+parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=3)
+parser.add_argument('--action_repeat', type=int, default=1)
+parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
                     help="26 without alive info, 38 with alive info.")
-parser.add_argument('--max_ep_len', type=int, default=300)
+parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
-parser.add_argument('--entropy', type=float, default=0.57, help="alpha > 0， 1.5，3.5.. enable sppo.")
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
-parser.add_argument('--num_stack', type=int, default=15)
-parser.add_argument('--num_stack_jump', type=int, default=1)
+parser.add_argument('--num_stack', type=int, default=1)
+parser.add_argument('--num_stack_jump', type=int, default=3)
 # parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
 
 
@@ -129,9 +128,7 @@ if __name__ == "__main__":
 
         # Total SGD batch size across all devices for SGD. This defines the
         # minibatch size within each epoch.
-
-        "sgd_minibatch_size": args.sgd_minibatch_size,
-
+        "sgd_minibatch_size": 8192,
         # Whether to shuffle sequences in the batch when training (recommended).
         # "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
@@ -148,9 +145,7 @@ if __name__ == "__main__":
         # you set vf_share_layers: True.
         # "vf_loss_coeff": 1.0,
         # Coefficient of the entropy regularizer.
-
-        "entropy_coeff": args.entropy,
-
+        # "entropy_coeff": 0.0,
         # Decay schedule for the entropy regularizer.
         # "entropy_coeff_schedule": None,
         # PPO clip parameter.
@@ -199,17 +194,26 @@ if __name__ == "__main__":
         # "num_gpus_per_worker": 0,
     }
 
-    stop = {
-        # "training_iteration": args.stop_iters,
-        "timesteps_total": args.stop_timesteps,
-    }
+    print(pretty_print(config))
 
+    trainer = ppo.PPOTrainer(
+        config=config
+    )
 
-    #tune.run("PPO", config=config, stop=stop)
-    print(config)
-    tune.run("PPO",
-             checkpoint_freq=20,
-             config=config,
-             stop=stop)
+    # agent = ppo.PPOTrainer(config=config)
+    # agent.restore(checkpoint_path)
+
+    min_score = 150
+
+    for i in range(100000000):
+        # Perform one iteration of training the policy with PPO
+        result = trainer.train()
+        print(pretty_print(result))
+        if 'evaluation' in result.keys():
+            test_score = result['evaluation']['custom_metrics']['ep_score_mean']
+            if test_score < min_score:
+                checkpoint = trainer.save(ROOT+'/ray_results/PPO-train/'+str(test_score))
+                print("checkpoint saved at", checkpoint)
+                min_score = test_score
 
     ray.shutdown()
