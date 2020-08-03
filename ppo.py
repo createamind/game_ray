@@ -178,7 +178,7 @@ if __name__ == "__main__":
         # rollout workers.
         # "evaluation_num_workers": 8,
         # Optional custom eval function.
-        "custom_eval_function": custom_eval_function,
+        # "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
         # "evaluation_interval": 30,
         # Run 1 episodes each time evaluation runs.
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     print(config)
     exp_name = args.exp_name + "-dataV-" + args.data_v
     exp_name += "-model=" + str(args.hidden_sizes)[1:-1].replace(" ", "") + "-lstm=" + str(args.lstm)
-    exp_name += "-obs_dim" + str(args.obs_dim) + "-as" + str(args.action_scheme_id) + "-action_repeat=" + args.action_repeat
+    exp_name += "-obs_dim" + str(args.obs_dim) + "-as" + str(args.action_scheme_id) + "-action_repeat=" + str(args.action_repeat)
     exp_name += "-auto_follow" + str(args.auto_follow) + "-max_ep_len" + str(args.max_ep_len) + "-burn_in" + str(args.burn_in)
     exp_name += "-fs" + str(args.num_stack) + "-jump" + str(args.num_stack_jump)
     exp_name += "-ts" + str(args.target_scale) + "-ss" + str(args.score_scale) + "-ps" + str(args.profit_scale) + "-ap" + str(args.ap)
