@@ -97,11 +97,11 @@ if __name__ == "__main__":
 
         "model": {
             "fcnet_hiddens": args.hidden_sizes,
-            # "use_lstm": True,
+            "use_lstm": True,
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.
-            # "lstm_cell_size": 256,
+            "lstm_cell_size": 512,
         },
         # "model": {"fcnet_hiddens": args.hidden_sizes},
 
