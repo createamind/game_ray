@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',
                     help="r12 have 62days, r19 have 120days.")
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 600])
+parser.add_argument('--lstm', type=bool, default=True)
 parser.add_argument('--gamma', type=float, default=0.998)
 parser.add_argument('--num_workers', type=int, default=32)
 parser.add_argument('--train_batch_size', type=int, default=18000)
@@ -35,7 +36,7 @@ parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
 parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
-# parser.add_argument('--exp_name', type=str, default='inc_ss')
+parser.add_argument('--exp_name', type=str, default='PPO')
 parser.add_argument('--num_stack', type=int, default=1)
 parser.add_argument('--num_stack_jump', type=int, default=3)
 # parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
@@ -96,7 +97,7 @@ if __name__ == "__main__":
 
         "model": {
             "fcnet_hiddens": args.hidden_sizes,
-            # "use_lstm": True,
+            "use_lstm": args.lstm,
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.

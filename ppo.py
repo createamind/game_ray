@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',
                     help="r12 have 62days, r19 have 120days.")
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 600])
+parser.add_argument('--lstm', type=bool, default=True)
 parser.add_argument('--gamma', type=float, default=0.998)
 parser.add_argument('--num_workers', type=int, default=32)
 parser.add_argument('--train_batch_size', type=int, default=18000)
@@ -33,7 +34,7 @@ parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
 parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
-# parser.add_argument('--exp_name', type=str, default='inc_ss')
+parser.add_argument('--exp_name', type=str, default='PPO')
 parser.add_argument('--num_stack', type=int, default=1)
 parser.add_argument('--num_stack_jump', type=int, default=3)
 # parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
@@ -94,7 +95,7 @@ if __name__ == "__main__":
 
         "model": {
             "fcnet_hiddens": args.hidden_sizes,
-            # "use_lstm": True,
+            "use_lstm": args.lstm,
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.
@@ -175,13 +176,13 @@ if __name__ == "__main__":
         # process. If you increase this, it will increase the Ray resource usage
         # of the trainer since evaluation workers are created separately from
         # rollout workers.
-        "evaluation_num_workers": 8,
+        # "evaluation_num_workers": 8,
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        "evaluation_interval": 30,
+        # "evaluation_interval": 30,
         # Run 1 episodes each time evaluation runs.
-        "evaluation_num_episodes": 1,
+        # "evaluation_num_episodes": 1,
 
         # === Advanced Resource Settings ===
         # Number of CPUs to allocate per worker.
@@ -198,9 +199,20 @@ if __name__ == "__main__":
     }
 
     print(config)
+    exp_name = args.exp_name + "-dataV-" + args.data_v
+    exp_name += "-model=" + str(args.hidden_sizes)[1:-1].replace(" ", "") + "-lstm=" + str(args.lstm)
+    exp_name += "-obs_dim" + str(args.obs_dim) + "-as" + str(args.action_scheme_id) + "-action_repeat=" + args.action_repeat
+    exp_name += "-auto_follow" + str(args.auto_follow) + "-max_ep_len" + str(args.max_ep_len) + "-burn_in" + str(args.burn_in)
+    exp_name += "-fs" + str(args.num_stack) + "-jump" + str(args.num_stack_jump)
+    exp_name += "-ts" + str(args.target_scale) + "-ss" + str(args.score_scale) + "-ps" + str(args.profit_scale) + "-ap" + str(args.ap)
+    exp_name += "-dl" + str(args.delay_len) + "-clip" + str(args.target_clip)
+    exp_name += "-gamma" + str(args.gamma) + "-lr" + str(args.lr)  # + "-alpha" + str(args.alpha)
+    # if args.restore_model:
+    #     exp_name += "-restore_model" + str(args.restore_model)
 
     tune.run("PPO",
-             checkpoint_freq=30,
+             name=exp_name,
+             checkpoint_freq=50,
              config=config,
              stop=stop)
 
