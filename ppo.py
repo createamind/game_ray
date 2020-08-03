@@ -3,6 +3,7 @@ import argparse
 import ray
 from ray import tune
 from utils import MyCallbacks, custom_eval_function
+from ray.tune.logger import pretty_print
 
 import os
 import sys
@@ -18,7 +19,7 @@ parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 60
 parser.add_argument('--lstm', type=bool, default=True)
 parser.add_argument('--gamma', type=float, default=0.998)
 parser.add_argument('--num_workers', type=int, default=32)
-parser.add_argument('--train_batch_size', type=int, default=18000)
+parser.add_argument('--train_batch_size', type=int, default=12800)
 parser.add_argument('--target_scale', type=float, default=1)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
@@ -198,9 +199,9 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    print(config)
-    exp_name = args.exp_name + "-dataV-" + args.data_v
-    exp_name += "-model=" + str(args.hidden_sizes)[1:-1].replace(" ", "") + "-lstm=" + str(args.lstm)
+    print(pretty_print(config))
+    exp_name = args.exp_name + "-dataV-" + args.data_v + "-num_workers=" + str(args.num_workers)
+    exp_name += "-model=" + str(args.hidden_sizes)[1:-1].replace(" ", "") + "-lstm=" + str(args.lstm) + "-batch_size=" + str(args.train_batch_size)
     exp_name += "-obs_dim" + str(args.obs_dim) + "-as" + str(args.action_scheme_id) + "-action_repeat=" + str(args.action_repeat)
     exp_name += "-auto_follow" + str(args.auto_follow) + "-max_ep_len" + str(args.max_ep_len) + "-burn_in" + str(args.burn_in)
     exp_name += "-fs" + str(args.num_stack) + "-jump" + str(args.num_stack_jump)
