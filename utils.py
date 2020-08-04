@@ -20,6 +20,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.user_data["reward_target_bias"] = []
         episode.user_data["reward_ap"] = []
         episode.user_data["ep_target_bias"] = []
+        episode.user_data["num_no_action"] = 0
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
                         episode: MultiAgentEpisode, **kwargs):
@@ -33,6 +34,8 @@ class MyCallbacks(DefaultCallbacks):
             episode.user_data["reward_target_bias"].append(reward_target_bias)
             episode.user_data["reward_ap"].append(reward_ap)
             episode.user_data["ep_target_bias"].append(ep_target_bias)
+            if episode.last_action_for() == 0:
+                episode.user_data["num_no_action"] += 1
 
     def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
@@ -51,6 +54,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.custom_metrics["ep_target_bias"] = ep_target_bias
         episode.custom_metrics["ep_score"] = episode.last_info_for()['score']
         episode.custom_metrics["ep_target_bias_per_step"] = ep_target_bias / episode.length
+        episode.custom_metrics["ep_num_no_action"] = episode.user_data["num_no_action"]
 
     # def on_sample_end(self, worker: RolloutWorker, samples: SampleBatch,
     #                   **kwargs):

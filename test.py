@@ -263,8 +263,6 @@ def rollout(agent,
             # saver.append_step(obs, action, next_obs, reward, done, info)
             steps += 1
 
-            if steps % 5000 == 0:
-                print("Day #{}: step: {} score: {}".format(start_day, steps, info['score']))
             obs = next_obs
         print("Day #{}: step: {} score: {} num_action: {}".format(start_day, steps, info['score'], steps-num_zero_action))
         print("time:", (time.time() - start_time) / 60)

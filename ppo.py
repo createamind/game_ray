@@ -184,6 +184,9 @@ if __name__ == "__main__":
         # "evaluation_interval": 30,
         # Run 1 episodes each time evaluation runs.
         # "evaluation_num_episodes": 1,
+        # "evaluation_config": {
+        #     "explore": False
+        # }
 
         # === Advanced Resource Settings ===
         # Number of CPUs to allocate per worker.
