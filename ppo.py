@@ -28,7 +28,7 @@ parser.add_argument('--burn_in', type=int, default=3000)
 parser.add_argument('--delay_len', type=int, default=0)
 parser.add_argument('--target_clip', type=int, default=10000000000)
 parser.add_argument('--auto_follow', type=int, default=16)
-parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=15)
+parser.add_argument('--action_scheme_id', type=int, choices=[3, 15, 21], default=15)
 parser.add_argument('--action_repeat', type=int, default=250)
 parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,
                     help="26 without alive info, 38 with alive info.")
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.
-            "lstm_cell_size": 512,
+            "lstm_cell_size": 700,
         },
         # "model": {"fcnet_hiddens": args.hidden_sizes},
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         # "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
         # execute per train batch).
-        "num_sgd_iter": 30,
+        "num_sgd_iter": 40,
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
