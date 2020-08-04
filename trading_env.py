@@ -167,7 +167,7 @@ class TradingEnv(gym.Env):
         last_profit = self.rewards[1] - self.rewards[3]
 
 
-        actionfoll = action 
+        actionfoll = action + 1
         if True :
             action  = 0
             if abs(last_bias) > actionfoll :
