@@ -186,7 +186,7 @@ if __name__ == "__main__":
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        "evaluation_interval": 30,
+        "evaluation_interval": 10,
         # Run 1 episodes each time evaluation runs.
         "evaluation_num_episodes": 1,
 
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     #tune.run("PPO", config=config, stop=stop)
     print(config)
     tune.run("PPO",
-             checkpoint_freq=20,
+             checkpoint_freq=10,
              config=config,
              stop=stop)
 
