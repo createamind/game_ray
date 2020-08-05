@@ -83,6 +83,7 @@ class TradingEnv(gym.Env):
 
         self.max_ep_len = env_config['max_ep_len']
         self.ep_len = 0
+        self.num_step = 0
 
         self.his_price = deque(maxlen=30)
 
@@ -153,6 +154,7 @@ class TradingEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
+        self.num_step += 1
         for _ in range(self.action_repeat):
             obs, r, done, info = self._step(action)
             reward += r
@@ -194,6 +196,9 @@ class TradingEnv(gym.Env):
         if self.eval:
             done = bool(self.raw_obs[0])
             if done:
+                print(self.num_step)
+                print(self.ep_len)
+                print("day", self.raw_obs[25], "score:", self.rewards[0])
                 self.eval = False
         else:
             done = bool(self.raw_obs[0]) or self.ep_len == self.max_ep_len
