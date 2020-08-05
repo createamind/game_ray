@@ -8,7 +8,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.agents.callbacks import DefaultCallbacks
-from ray.rllib.evaluation.metrics import collect_episodes, summarize_episodes
+from ray.rllib.evaluation.metrics import collect_episodes, summarize_episodes, collect_metrics
 
 
 class MyCallbacks(DefaultCallbacks):
@@ -88,32 +88,21 @@ def custom_eval_function(trainer, eval_workers):
 
     print("*************** Evaluation start... ***************")
     start_time = time.time()
+    # collect_time = time.time()
+    metrics = collect_metrics(eval_workers.local_worker(), eval_workers.remote_workers(), timeout_seconds=3)
+    # print("collect metrics time:", time.time() - collect_time)
 
-    # Set different env settings for each worker. Here we use a fixed config,
-    # which also could have been computed in each worker by looking at
-    # env_config.worker_index (printed in SimpleCorridor class above).
+    # save checkpoint here
+    # if 'ep_score_mean' in metrics and metrics['ep_score_mean'] < 150:
+    #     checkpoint = trainer.save()
+    #     print("checkpoint saved at", checkpoint)
+
     for i, worker in enumerate(eval_workers.remote_workers()):
         worker.foreach_env.remote(lambda env: env.eval_set(start_day=51 + i))
 
-    # Calling .sample() runs exactly one episode per worker due to how the
-    # eval workers are configured.
-    ray.get([w.sample.remote() for w in eval_workers.remote_workers()])
+    [w.sample.remote() for w in eval_workers.remote_workers()]
 
-    # Collect the accumulated episodes on the workers, and then summarize the
-    # episode stats into a metrics dict.
-    episodes, _ = collect_episodes(
-        remote_workers=eval_workers.remote_workers(), timeout_seconds=99999)
-    # You can compute metrics from the episodes manually, or use the
-    # convenient `summarize_episodes()` utility:
-    metrics = summarize_episodes(episodes)
-    # Note that the above two statements are the equivalent of:
-    # metrics = collect_metrics(eval_workers.local_worker(),
-    #                           eval_workers.remote_workers())
-
-    # You can also put custom values in the metrics dict.
-    # metrics["foo"] = 1
-    total_time = time.time()-start_time
-    print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time/60))
+    total_time = time.time() - start_time
+    print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time / 60))
     print("*************** Evaluation end. ***************")
     return metrics
-

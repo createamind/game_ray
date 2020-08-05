@@ -19,15 +19,15 @@ parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[600, 800, 60
 parser.add_argument('--lstm', type=bool, default=True)
 parser.add_argument('--gamma', type=float, default=0.998)
 parser.add_argument('--num_workers', type=int, default=32)
-parser.add_argument('--train_batch_size', type=int, default=12800)
-parser.add_argument('--target_scale', type=float, default=1)
+parser.add_argument('--train_batch_size', type=int, default=9000)
+parser.add_argument('--target_scale', type=float, default=0)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
-parser.add_argument('--ap', type=float, default=0.4)
+parser.add_argument('--ap', type=float, default=0)
 parser.add_argument('--burn_in', type=int, default=3000)
-parser.add_argument('--delay_len', type=int, default=30)
-parser.add_argument('--target_clip', type=int, default=5)
-parser.add_argument('--auto_follow', type=int, default=0)
+parser.add_argument('--delay_len', type=int, default=0)
+parser.add_argument('--target_clip', type=int, default=0)
+parser.add_argument('--auto_follow', type=int, default=10)
 parser.add_argument('--action_scheme_id', type=int, choices=[3, 15], default=3)
 parser.add_argument('--action_repeat', type=int, default=1)
 parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         # you set vf_share_layers: True.
         # "vf_loss_coeff": 1.0,
         # Coefficient of the entropy regularizer.
-        # "entropy_coeff": 0.0,
+        "entropy_coeff": 0.01,
         # Decay schedule for the entropy regularizer.
         # "entropy_coeff_schedule": None,
         # PPO clip parameter.
@@ -177,16 +177,16 @@ if __name__ == "__main__":
         # process. If you increase this, it will increase the Ray resource usage
         # of the trainer since evaluation workers are created separately from
         # rollout workers.
-        # "evaluation_num_workers": 8,
+        "evaluation_num_workers": 8,
         # Optional custom eval function.
-        # "custom_eval_function": custom_eval_function,
+        "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        # "evaluation_interval": 30,
+        "evaluation_interval": 100,
         # Run 1 episodes each time evaluation runs.
-        # "evaluation_num_episodes": 1,
-        # "evaluation_config": {
-        #     "explore": False
-        # }
+        "evaluation_num_episodes": 1,
+        "evaluation_config": {
+            "explore": False
+        }
 
         # === Advanced Resource Settings ===
         # Number of CPUs to allocate per worker.
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
     tune.run("PPO",
              name=exp_name,
-             checkpoint_freq=50,
+             checkpoint_freq=100,
              config=config,
              stop=stop)
 
