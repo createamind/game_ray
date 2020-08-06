@@ -7,7 +7,7 @@ game_ray/
     * ppo.py
     * trading_env.py
 
-pip install ray[rllib] requests gputil
+pip install "tensorflow-gpu<2.0,>=1.8.0" ray[rllib] requests gputil
 
 CUDA_VISIBLE_DEVICES="0" python ppo.py
 

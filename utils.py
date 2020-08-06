@@ -1,6 +1,7 @@
 from typing import Dict
 import numpy as np
 import time
+import os
 
 import ray
 from ray.rllib.env import BaseEnv
@@ -8,7 +9,7 @@ from ray.rllib.policy import Policy
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.agents.callbacks import DefaultCallbacks
-from ray.rllib.evaluation.metrics import collect_episodes, summarize_episodes
+from ray.rllib.evaluation.metrics import collect_episodes, summarize_episodes, collect_metrics
 
 
 class MyCallbacks(DefaultCallbacks):
@@ -20,6 +21,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.user_data["reward_target_bias"] = []
         episode.user_data["reward_ap"] = []
         episode.user_data["ep_target_bias"] = []
+        episode.user_data["num_no_action"] = 0
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
                         episode: MultiAgentEpisode, **kwargs):
@@ -33,6 +35,8 @@ class MyCallbacks(DefaultCallbacks):
             episode.user_data["reward_target_bias"].append(reward_target_bias)
             episode.user_data["reward_ap"].append(reward_ap)
             episode.user_data["ep_target_bias"].append(ep_target_bias)
+            if episode.last_action_for() == 0:
+                episode.user_data["num_no_action"] += 1
 
     def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
@@ -51,6 +55,7 @@ class MyCallbacks(DefaultCallbacks):
         episode.custom_metrics["ep_target_bias"] = ep_target_bias
         episode.custom_metrics["ep_score"] = episode.last_info_for()['score']
         episode.custom_metrics["ep_target_bias_per_step"] = ep_target_bias / episode.length
+        episode.custom_metrics["ep_num_no_action"] = episode.user_data["num_no_action"]
 
     # def on_sample_end(self, worker: RolloutWorker, samples: SampleBatch,
     #                   **kwargs):
@@ -84,32 +89,34 @@ def custom_eval_function(trainer, eval_workers):
 
     print("*************** Evaluation start... ***************")
     start_time = time.time()
+    # collect_time = time.time()
+    metrics = collect_metrics(eval_workers.local_worker(), eval_workers.remote_workers(), timeout_seconds=3)
+    # print("collect metrics time:", time.time() - collect_time)
+    # print(metrics)
 
-    # Set different env settings for each worker. Here we use a fixed config,
-    # which also could have been computed in each worker by looking at
-    # env_config.worker_index (printed in SimpleCorridor class above).
+    # save checkpoint here
+    if metrics['custom_metrics']:
+
+        ld = os.listdir(trainer.logdir)
+        his_score = [float(name.split('_')[1]) for name in ld if name.split('_')[0] == 'score']
+        if his_score:
+            min_score = min(his_score)
+        else:
+            min_score = 150
+        score = metrics['custom_metrics']['ep_score_mean']
+        # if metrics['episode_len_mean'] > 22000 and score < min_score:
+        if score < min_score:
+            checkpoint_dir = os.path.join(trainer.logdir, "score_{}".format(score))
+            checkpoint = trainer.save(checkpoint_dir)
+            print("checkpoint saved at", checkpoint)
+    else:
+        print("no custom_metrics")
     for i, worker in enumerate(eval_workers.remote_workers()):
         worker.foreach_env.remote(lambda env: env.eval_set(start_day=51 + i))
 
-    # Calling .sample() runs exactly one episode per worker due to how the
-    # eval workers are configured.
-    ray.get([w.sample.remote() for w in eval_workers.remote_workers()])
+    [w.sample.remote() for w in eval_workers.remote_workers()]
 
-    # Collect the accumulated episodes on the workers, and then summarize the
-    # episode stats into a metrics dict.
-    episodes, _ = collect_episodes(
-        remote_workers=eval_workers.remote_workers(), timeout_seconds=99999)
-    # You can compute metrics from the episodes manually, or use the
-    # convenient `summarize_episodes()` utility:
-    metrics = summarize_episodes(episodes)
-    # Note that the above two statements are the equivalent of:
-    # metrics = collect_metrics(eval_workers.local_worker(),
-    #                           eval_workers.remote_workers())
-
-    # You can also put custom values in the metrics dict.
-    # metrics["foo"] = 1
-    total_time = time.time()-start_time
-    print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time/60))
+    total_time = time.time() - start_time
+    print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time / 60))
     print("*************** Evaluation end. ***************")
     return metrics
-

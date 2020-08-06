@@ -3,6 +3,7 @@ import argparse
 import ray
 from ray import tune
 from utils import MyCallbacks, custom_eval_function
+from ray.tune.logger import pretty_print
 
 import os
 import sys
@@ -15,30 +16,41 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
                     help="r12 have 62days, r19 have 120days.")
 
+
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 600,500,500,500,500,500])
 parser.add_argument('--gamma', type=float, default=0.8)
 parser.add_argument('--num_workers', type=int, default=100)
 parser.add_argument('--train_batch_size', type=int, default=20000)
 parser.add_argument('--sgd_minibatch_size', type=int, default=15000)
+
+
+parser.add_argument('--lstm', type=bool, default=True)
+
+
 parser.add_argument('--target_scale', type=float, default=0)
 parser.add_argument('--score_scale', type=float, default=1.5)
 parser.add_argument('--profit_scale', type=float, default=0)
 parser.add_argument('--ap', type=float, default=0)
 parser.add_argument('--burn_in', type=int, default=3000)
 parser.add_argument('--delay_len', type=int, default=0)
+
 parser.add_argument('--target_clip', type=int, default=10000000000)
 parser.add_argument('--auto_follow', type=int, default=16)
 parser.add_argument('--action_scheme_id', type=int, choices=[3, 15, 21], default=15)
 parser.add_argument('--action_repeat', type=int, default=250)
-parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,
-                    help="26 without alive info, 38 with alive info.")
+parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,                    help="26 without alive info, 38 with alive info.")
 parser.add_argument('--max_ep_len', type=int, default=300)
 parser.add_argument('--lr', type=float, default=4e-5)
+
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
-parser.add_argument('--entropy', type=float, default=0.57, help="alpha > 0， 1.5，3.5.. enable sppo.")
+
+parser.add_argument('--entropy_coeff', type=float, default=0.57, help="alpha > 0， 1.5，3.5.. enable sppo.")
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
 parser.add_argument('--num_stack', type=int, default=15)
 parser.add_argument('--num_stack_jump', type=int, default=1)
+
+parser.add_argument('--exp_name', type=str, default='PPO')
+
 # parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
 
 
@@ -97,7 +109,9 @@ if __name__ == "__main__":
 
         "model": {
             "fcnet_hiddens": args.hidden_sizes,
-            "use_lstm": True,
+
+            "use_lstm": args.lstm,
+
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.
@@ -149,7 +163,7 @@ if __name__ == "__main__":
         # "vf_loss_coeff": 1.0,
         # Coefficient of the entropy regularizer.
 
-        "entropy_coeff": args.entropy,
+        "entropy_coeff": args.entropy_coeff,
 
         # Decay schedule for the entropy regularizer.
         # "entropy_coeff_schedule": None,
@@ -186,9 +200,14 @@ if __name__ == "__main__":
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
+
         "evaluation_interval": 10,
+
         # Run 1 episodes each time evaluation runs.
         "evaluation_num_episodes": 1,
+        "evaluation_config": {
+            "explore": False
+        }
 
         # === Advanced Resource Settings ===
         # Number of CPUs to allocate per worker.
@@ -205,10 +224,27 @@ if __name__ == "__main__":
     }
 
 
+    print(pretty_print(config))
+    exp_name = args.exp_name + "-dataV-" + args.data_v + "-num_workers=" + str(args.num_workers)
+    exp_name += "-model=" + str(args.hidden_sizes)[1:-1].replace(" ", "") + "-lstm=" + str(args.lstm) + "-batch_size=" + str(args.train_batch_size)
+    exp_name += "-obs_dim" + str(args.obs_dim) + "-as" + str(args.action_scheme_id) + "-action_repeat=" + str(args.action_repeat)
+    exp_name += "-auto_follow" + str(args.auto_follow) + "-max_ep_len" + str(args.max_ep_len) + "-burn_in" + str(args.burn_in)
+    exp_name += "-fs" + str(args.num_stack) + "-jump" + str(args.num_stack_jump)
+    exp_name += "-ts" + str(args.target_scale) + "-ss" + str(args.score_scale) + "-ps" + str(args.profit_scale) + "-ap" + str(args.ap)
+    exp_name += "-dl" + str(args.delay_len) + "-clip" + str(args.target_clip)
+    exp_name += "-gamma" + str(args.gamma) + "-lr" + str(args.lr) + "-entropy" + str(args.entropy_coeff)  # + "-alpha" + str(args.alpha)
+    # if args.restore_model:
+    #     exp_name += "-restore_model" + str(args.restore_model)
+
+
     #tune.run("PPO", config=config, stop=stop)
     print(config)
     tune.run("PPO",
+
              checkpoint_freq=10,
+
+             name=exp_name,
+
              config=config,
              stop=stop)
 

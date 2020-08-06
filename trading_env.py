@@ -95,8 +95,6 @@ class TradingEnv(gym.Env):
         self.score_scale = env_config['score_scale']
         self.profit_scale = env_config['profit_scale']
         assert not (self.score_scale != 0 and self.profit_scale != 0), "score_scale and profit_scale must have one equal to 0"
-        if self.profit_scale != 0:
-            burn_in = 0
         self.ap = env_config['action_punish']
         # env reset
         self.burn_in = env_config['burn_in']
@@ -116,6 +114,7 @@ class TradingEnv(gym.Env):
     def eval_set(self, start_day):
         self.eval = True
         self.start_day = start_day
+        self.reset()
 
     def reset(self):
 
@@ -126,7 +125,6 @@ class TradingEnv(gym.Env):
             start_day = self.start_day
             start_skip = 0
             burn_in = 0
-            self.start_day = None
         else:
             start_day = np.random.randint(1, self.trainning_set + 1, 1)[0]  # first self.trainning_set days
             day_index = start_day - 1
@@ -196,10 +194,14 @@ class TradingEnv(gym.Env):
         if self.eval:
             done = bool(self.raw_obs[0])
             if done:
+
                 print(self.num_step)
                 print(self.ep_len)
-                print("day", self.raw_obs[25], "score:", self.rewards[0])
+
                 self.eval = False
+
+                print("Day", self.raw_obs[25], "len:", self.ep_len, "Profit:", self.rewards[1], "Score:", self.rewards[0])
+
         else:
             done = bool(self.raw_obs[0]) or self.ep_len == self.max_ep_len
 
