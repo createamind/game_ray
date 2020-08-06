@@ -12,8 +12,10 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkpoint', type=str,
-                    default="/home/shuai/ray_results/PPO/PPO_TradingEnv_0_2020-07-31_17-34-23hdewwddn/checkpoint_10000/checkpoint-10000")
-parser.add_argument('--num_workers', type=int, default=1)
+                    default="/home/shuai/ray_results/PPO/PPO_TradingEnv_0_2020-08-03_18-28-526c88zg70/checkpoint_6650/checkpoint-6650")
+parser.add_argument('--num_workers', type=int, default=8)
+parser.add_argument('--start_day', type=int, default=1)
+parser.add_argument('--test_days', type=int, default=62)
 
 
 if __name__ == "__main__":
@@ -44,24 +46,62 @@ if __name__ == "__main__":
 
     ray.init()
 
-    agent = ppo.PPOTrainer(config=config)
-    agent.restore(args.checkpoint)
+    evaluator = ppo.PPOTrainer(config=config)
+    evaluator.restore(args.checkpoint)
 
-    min_score = 150
+    num_workers = args.num_workers
+    start_day = args.start_day
+    test_days_remain = args.test_days
 
     print("*************** Evaluation start... ***************")
     start_time = time.time()
 
-    for i, worker in enumerate(agent.workers.remote_workers()):
-        worker.foreach_env.remote(lambda env: env.eval_set(start_day=51 + i))
+    episode_len_mean = []
+    # ep_target_bias_mean = []
+    ep_target_bias_per_step_mean = []
+    ep_score_mean = []
+    ep_num_no_action_mean = []
+    total_episodes = 0
 
-    ray.get([w.sample.remote() for w in agent.workers.remote_workers()])
+    while test_days_remain > 0:
 
-    # Note that the above two statements are the equivalent of:
-    metrics = collect_metrics(agent.workers.local_worker(),
-                              agent.workers.remote_workers())
-    print(pretty_print(metrics))
+        for i, worker in enumerate(evaluator.workers.remote_workers()):
+            if i < test_days_remain:
+                print("day{} start test.".format(start_day))
+                worker.foreach_env.remote(lambda env: env.eval_set(start_day=start_day))
+                start_day += 1
 
+        ray.get([worker.sample.remote() for i, worker in enumerate(evaluator.workers.remote_workers()) if i < test_days_remain])
+
+        metrics = collect_metrics(evaluator.workers.local_worker(), evaluator.workers.remote_workers())
+
+        episode_len_mean.append(metrics['episode_len_mean'])
+        # ep_target_bias_mean.append(metrics['custom_metrics']['ep_target_bias_mean'])
+        ep_target_bias_per_step_mean.append(metrics['custom_metrics']['ep_target_bias_per_step_mean'])
+        ep_score_mean.append(metrics['custom_metrics']['ep_score_mean'])
+        ep_num_no_action_mean.append(metrics['custom_metrics']['ep_num_no_action_mean'])
+        total_episodes += metrics['episodes_this_iter']
+
+        test_days_remain -= num_workers
+
+    score = sum(ep_score_mean)/len(ep_score_mean)
+    episode_len_mean = sum(episode_len_mean)/len(episode_len_mean)
+    # target_bias_mean = sum(ep_target_bias_mean)/len(ep_target_bias_mean)
+    target_bias_per_step_mean = sum(ep_target_bias_per_step_mean) / len(ep_target_bias_per_step_mean)
+    num_no_action_mean = sum(ep_num_no_action_mean) / len(ep_num_no_action_mean)
+    total_episodes = total_episodes
+
+    test_result = {
+        'score': score,
+        'episode_len_mean': episode_len_mean,
+        # 'target_bias_mean': target_bias_mean,
+        'target_bias_per_step_mean': target_bias_per_step_mean,
+        'num_action_mean': episode_len_mean-num_no_action_mean,
+        'total_episodes': total_episodes,
+    }
+    print("###################")
+    print(pretty_print(test_result))
+    print("###################")
     total_time = time.time() - start_time
     print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time / 60))
     print("*************** Evaluation end. ***************")
