@@ -1,6 +1,7 @@
 from typing import Dict
 import numpy as np
 import time
+import os
 
 import ray
 from ray.rllib.env import BaseEnv
@@ -91,12 +92,25 @@ def custom_eval_function(trainer, eval_workers):
     # collect_time = time.time()
     metrics = collect_metrics(eval_workers.local_worker(), eval_workers.remote_workers(), timeout_seconds=3)
     # print("collect metrics time:", time.time() - collect_time)
+    # print(metrics)
 
     # save checkpoint here
-    # if 'ep_score_mean' in metrics and metrics['ep_score_mean'] < 150:
-    #     checkpoint = trainer.save()
-    #     print("checkpoint saved at", checkpoint)
+    if metrics['custom_metrics']:
 
+        ld = os.listdir(trainer.logdir)
+        his_score = [float(name.split('_')[1]) for name in ld if name.split('_')[0] == 'score']
+        if his_score:
+            min_score = min(his_score)
+        else:
+            min_score = 150
+        score = metrics['custom_metrics']['ep_score_mean']
+        # if metrics['episode_len_mean'] > 22000 and score < min_score:
+        if score < min_score:
+            checkpoint_dir = os.path.join(trainer.logdir, "score_{}".format(score))
+            checkpoint = trainer.save(checkpoint_dir)
+            print("checkpoint saved at", checkpoint)
+    else:
+        print("no custom_metrics")
     for i, worker in enumerate(eval_workers.remote_workers()):
         worker.foreach_env.remote(lambda env: env.eval_set(start_day=51 + i))
 
