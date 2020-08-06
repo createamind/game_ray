@@ -70,6 +70,8 @@ if __name__ == "__main__":
                 print("day{} start test.".format(start_day))
                 worker.foreach_env.remote(lambda env: env.eval_set(start_day=start_day))
                 start_day += 1
+            else:
+                break
 
         ray.get([worker.sample.remote() for i, worker in enumerate(evaluator.workers.remote_workers()) if i < test_days_remain])
 
