@@ -182,7 +182,7 @@ if __name__ == "__main__":
         # process. If you increase this, it will increase the Ray resource usage
         # of the trainer since evaluation workers are created separately from
         # rollout workers.
-        "evaluation_num_workers": 8,
+        "evaluation_num_workers": 1,
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
