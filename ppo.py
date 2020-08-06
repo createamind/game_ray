@@ -34,6 +34,7 @@ parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
                     help="26 without alive info, 38 with alive info.")
 parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
+parser.add_argument('--entropy_coeff', type=float, default=0.01)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
 parser.add_argument('--exp_name', type=str, default='PPO')
 parser.add_argument('--num_stack', type=int, default=1)
@@ -145,7 +146,7 @@ if __name__ == "__main__":
         # you set vf_share_layers: True.
         # "vf_loss_coeff": 1.0,
         # Coefficient of the entropy regularizer.
-        "entropy_coeff": 0.01,
+        "entropy_coeff": args.entropy_coeff,
         # Decay schedule for the entropy regularizer.
         # "entropy_coeff_schedule": None,
         # PPO clip parameter.
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     exp_name += "-fs" + str(args.num_stack) + "-jump" + str(args.num_stack_jump)
     exp_name += "-ts" + str(args.target_scale) + "-ss" + str(args.score_scale) + "-ps" + str(args.profit_scale) + "-ap" + str(args.ap)
     exp_name += "-dl" + str(args.delay_len) + "-clip" + str(args.target_clip)
-    exp_name += "-gamma" + str(args.gamma) + "-lr" + str(args.lr)  # + "-alpha" + str(args.alpha)
+    exp_name += "-gamma" + str(args.gamma) + "-lr" + str(args.lr) + "-entropy" + str(args.entropy_coeff)  # + "-alpha" + str(args.alpha)
     # if args.restore_model:
     #     exp_name += "-restore_model" + str(args.restore_model)
 
