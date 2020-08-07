@@ -1,4 +1,24 @@
 
+
+
+
+
+
+
+echo `date`
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_12-08-18nde1hfur/checkpoint_20/checkpoint-20"   > logs4.20
+
+echo `date`
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_12-08-18nde1hfur/checkpoint_40/checkpoint-40"   > logs4.40
+
+echo `date`
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_12-08-18nde1hfur/checkpoint_60/checkpoint-60"   > logs4.60
+
+echo `date`
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_12-08-18nde1hfur/checkpoint_80/checkpoint-80"   > logs4.80
+
+
+
 echo `date`
 CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_12-08-18nde1hfur/checkpoint_100/checkpoint-100"   > logs4.100
 echo `date`
@@ -61,8 +81,10 @@ echo `date`
 CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_17-58-54zuiwb872/checkpoint_220/checkpoint-220"   > logs8.220
 
 
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_17-58-54zuiwb872/checkpoint_240/checkpoint-240"   > logs8.240
 
 
+CUDA_VISIBLE_DEVICES="0" python ptest.py  --test_days 120 --num_workers 120 --checkpoint="/tmp/PPO_TradingEnv_0_2020-08-04_17-58-54zuiwb872/checkpoint_260/checkpoint-260"   > logs8.260
 
 
 
