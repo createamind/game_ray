@@ -231,9 +231,10 @@ class TradingEnv(gym.Env):
                 "target_total_tolerance": target_tolerance + self.target_clip,
                 }
 
-        self.his_price.append(obs[0])
-        obs[22] = max(self.his_price)
-        obs[23] = min(self.his_price)
+        if self.ori_obs_dim > 23:
+            self.his_price.append(obs[0])
+            obs[22] = max(self.his_price)
+            obs[23] = min(self.his_price)
 
         return obs, designed_reward, done, info
 
@@ -280,6 +281,9 @@ class TradingEnv(gym.Env):
         elif self.ori_obs_dim == 24:
             obs = obs[:25]
             obs = np.delete(obs, [0])
+        elif self.ori_obs_dim == 3:
+            obs = obs[26:28]
+            # obs.append()
         elif self.ori_obs_dim == 2:
             obs = obs[26:28]
         else:
