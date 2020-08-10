@@ -34,7 +34,7 @@ parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=26,
                     help="26 without alive info, 38 with alive info.")
 parser.add_argument('--max_ep_len', type=int, default=3000)
 parser.add_argument('--lr', type=float, default=4e-5)
-parser.add_argument('--entropy_coeff', type=float, default=0.01)
+parser.add_argument('--entropy_coeff', type=float, default=0)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
 parser.add_argument('--exp_name', type=str, default='PPO')
 parser.add_argument('--num_stack', type=int, default=1)
@@ -138,7 +138,7 @@ if __name__ == "__main__":
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
-        # "lr_schedule": None,
+        "lr_schedule": [[0, args.lr], [100e6, 2e-6]],
         # Share layers for value function. If you set this to True, it's important
         # to tune vf_loss_coeff.
         # "vf_share_layers": False,
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         # Optional custom eval function.
         "custom_eval_function": custom_eval_function,
         # Enable evaluation, once per training iteration.
-        "evaluation_interval": 100,
+        "evaluation_interval": 150,
         # Run 1 episodes each time evaluation runs.
         "evaluation_num_episodes": 1,
         "evaluation_config": {
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
     tune.run("PPO",
              name=exp_name,
-             checkpoint_freq=100,
+             checkpoint_freq=150,
              config=config,
              stop=stop)
 

@@ -281,9 +281,8 @@ class TradingEnv(gym.Env):
         elif self.ori_obs_dim == 24:
             obs = obs[:25]
             obs = np.delete(obs, [0])
-        elif self.ori_obs_dim == 3:
-            obs = obs[26:28]
-            # obs.append()
+        elif self.ori_obs_dim == 7:
+            obs = np.append(obs[1:6], obs[26:28])
         elif self.ori_obs_dim == 2:
             obs = obs[26:28]
         else:
@@ -417,7 +416,7 @@ if __name__ == "__main__":
 
     env_config = {
         "data_v": 'r12',
-        "obs_dim": 38,
+        "obs_dim": 7,
         "action_scheme_id": 15,
         "action_repeat": 1,
         "target_scale": 1,
@@ -429,7 +428,7 @@ if __name__ == "__main__":
         "auto_follow": 0,
         "burn_in": 3000,
         "max_ep_len": 3000,
-        "frame_stack": 3,
+        "frame_stack": 1,
         "jump": 3,
         "model": 'mlp'
     }
