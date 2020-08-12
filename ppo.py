@@ -19,9 +19,9 @@ parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
 
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[800, 800, 600,500,500,500,500,500])
 parser.add_argument('--gamma', type=float, default=0.8)
-parser.add_argument('--num_workers', type=int, default=100)
-parser.add_argument('--train_batch_size', type=int, default=20000)
-parser.add_argument('--sgd_minibatch_size', type=int, default=15000)
+parser.add_argument('--num_workers', type=int, default=150)
+parser.add_argument('--train_batch_size', type=int, default=150000)
+parser.add_argument('--sgd_minibatch_size', type=int, default=100000)
 
 
 parser.add_argument('--lstm', type=bool, default=True)
@@ -37,16 +37,16 @@ parser.add_argument('--delay_len', type=int, default=0)
 parser.add_argument('--target_clip', type=int, default=10000000000)
 parser.add_argument('--auto_follow', type=int, default=16)
 parser.add_argument('--action_scheme_id', type=int, choices=[3, 15, 21], default=15)
-parser.add_argument('--action_repeat', type=int, default=250)
+parser.add_argument('--action_repeat', type=int, default=2000)
 parser.add_argument('--obs_dim', type=int, choices=[26, 38], default=38,                    help="26 without alive info, 38 with alive info.")
 parser.add_argument('--max_ep_len', type=int, default=300)
 parser.add_argument('--lr', type=float, default=4e-5)
 
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
 
-parser.add_argument('--entropy_coeff', type=float, default=0.57, help="alpha > 0， 1.5，3.5.. enable sppo.")
+parser.add_argument('--entropy_coeff', type=float, default=0.002, help="alpha > 0， 1.5，3.5.. enable sppo.")
 # parser.add_argument('--exp_name', type=str, default='inc_ss')
-parser.add_argument('--num_stack', type=int, default=15)
+parser.add_argument('--num_stack', type=int, default=1)
 parser.add_argument('--num_stack_jump', type=int, default=1)
 
 parser.add_argument('--exp_name', type=str, default='PPO')
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         # "shuffle_sequences": True,
         # Number of SGD iterations in each outer loop (i.e., number of epochs to
         # execute per train batch).
-        "num_sgd_iter": 40,
+        "num_sgd_iter": 70,
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
