@@ -39,8 +39,7 @@ parser.add_argument("--stop-timesteps", type=int, default=5e8)
 parser.add_argument('--exp_name', type=str, default='PPO')
 parser.add_argument('--num_stack', type=int, default=1)
 parser.add_argument('--num_stack_jump', type=int, default=3)
-# parser.add_argument('--alpha', type=float, default=0, help="alpha > 0 enable sppo.")
-
+parser.add_argument('--restore', type=str, default=None, help="restore checkpoint_path")
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -215,7 +214,9 @@ if __name__ == "__main__":
     # if args.restore_model:
     #     exp_name += "-restore_model" + str(args.restore_model)
 
+    checkpoint_path = args.restore
     tune.run("PPO",
+             restore=checkpoint_path,
              name=exp_name,
              checkpoint_freq=150,
              config=config,
