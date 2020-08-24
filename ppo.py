@@ -86,7 +86,7 @@ if __name__ == "__main__":
         "callbacks": MyCallbacks,
 
         "num_workers": args.num_workers,
-
+        #"num_envs_per_worker": 2,   
         # Number of GPUs to allocate to the trainer process. Note that not all
         # algorithms can take advantage of trainer GPUs. This can be fractional
         # (e.g., 0.3 GPUs).
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             # # Max seq len for training the LSTM, defaults to 20.
             # "max_seq_len": 20,
             # # Size of the LSTM cell.
-            "lstm_cell_size": 700,
+            "lstm_cell_size": 500,
         },
         # "model": {"fcnet_hiddens": args.hidden_sizes},
 
