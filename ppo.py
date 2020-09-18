@@ -13,12 +13,12 @@ sys.path.append(ROOT)
 from trading_env import TradingEnv, FrameStack
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',
+parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
                     help="r12 have 62days, r19 have 120days.")
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[300, 400, 300])
 parser.add_argument('--lstm', type=bool, default=False)
 parser.add_argument('--gamma', type=float, default=0.998)
-parser.add_argument('--num_workers', type=int, default=90)
+parser.add_argument('--num_workers', type=int, default=120)
 parser.add_argument('--train_batch_size', type=int, default=9000)
 parser.add_argument('--target_scale', type=float, default=1)
 parser.add_argument('--score_scale', type=float, default=1.5)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         # Stepsize of SGD.
         "lr": args.lr,
         # Learning rate schedule.
-        "lr_schedule": [[0, args.lr], [100e6, 2e-6]],
+        "lr_schedule": [[0, args.lr], [150e6, 1e-6]],
         # Share layers for value function. If you set this to True, it's important
         # to tune vf_loss_coeff.
         # "vf_share_layers": False,
