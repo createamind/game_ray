@@ -52,7 +52,7 @@ class TradingEnv(gym.Env):
         self.ori_obs_dim = 23
 
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.ori_obs_dim,), dtype=np.float32)
-        self.action_dim = 8
+        self.action_dim = 7
         self.action_space = spaces.Discrete(self.action_dim)
 
         self.max_ep_len = env_config['max_ep_len']
@@ -60,6 +60,8 @@ class TradingEnv(gym.Env):
         self.no_skip_step_len = 0
 
         self.his_price = deque(maxlen=5)
+        self.start_price = None
+        self.his_actions = []
 
     def reset(self):
 
@@ -82,6 +84,8 @@ class TradingEnv(gym.Env):
             self.expso.GetReward(self.ctx, self.rewards, self.rewards_len)
             self.no_skip_step_len += 1
 
+        self.start_price = self.raw_obs[1]
+        self.his_actions = []
         self.ep_len = 0
 
         obs = self._get_obs()
@@ -89,6 +93,14 @@ class TradingEnv(gym.Env):
         return obs
 
     def step(self, action):
+        action = int(action)
+        action += 1
+        price_diff = {1:-3, 2:-2, 3:-1, 4:0, 5:1, 6:2, 7:3}
+        order_price = self.raw_obs[2]+price_diff[action]
+        self.his_actions.append((order_price, price_diff[action]))
+        self.his_actions = sorted(self.his_actions, key=lambda i: i[0], reverse=True)
+        last_target = self.raw_obs[27]
+
         self.expso.Action(self.ctx, int(action))
         self.expso.Step(self.ctx)
         self.expso.GetInfo(self.ctx, self.raw_obs, self.raw_obs_len)
@@ -102,7 +114,16 @@ class TradingEnv(gym.Env):
         self.ep_len += 1
 
         obs = self._get_obs()
-        reward = self.rewards[1]/100
+
+        # profit = self.rewards[1]
+        # reward = (profit+self.start_price-self.raw_obs[1])/100
+
+        reward = 0
+        num_deal = self.raw_obs[27]-last_target
+        for _ in range(num_deal):
+            deal = self.his_actions.pop(0)
+            reward += -deal[1]
+
         done = self.raw_obs[0] == 1 or self.ep_len == self.max_ep_len
         info = {
             "TradingDay": self.raw_obs[25],
