@@ -49,14 +49,17 @@ class TradingEnv(gym.Env):
         self.actions = arr1()
         self.action_len = arr()
 
-        self.obs_dim = 23
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32)
+        self.ori_obs_dim = 23
+
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.ori_obs_dim,), dtype=np.float32)
         self.action_dim = 8
         self.action_space = spaces.Discrete(self.action_dim)
 
         self.max_ep_len = env_config['max_ep_len']
         self.ep_len = 0
         self.no_skip_step_len = 0
+
+        self.his_price = deque(maxlen=5)
 
     def reset(self):
 
@@ -86,7 +89,7 @@ class TradingEnv(gym.Env):
         return obs
 
     def step(self, action):
-        self.expso.Action(self.ctx, self.actions[action])
+        self.expso.Action(self.ctx, int(action))
         self.expso.Step(self.ctx)
         self.expso.GetInfo(self.ctx, self.raw_obs, self.raw_obs_len)
         self.expso.GetReward(self.ctx, self.rewards, self.rewards_len)
@@ -133,7 +136,12 @@ class TradingEnv(gym.Env):
                 total_volume_max - total_volume_mean)
         obs[target_filter] = (obs[target_filter] - target_mean) / (target_max - target_mean)
 
-        if self.obs_dim == 23:
+        if self.ori_obs_dim == 23:
+
+            self.his_price.append(obs[1])
+            obs[22] = max(self.his_price)
+            obs[23] = min(self.his_price)
+
             obs = obs[2:25]
         else:
             print(obs.shape)
@@ -152,10 +160,9 @@ class FrameStack(TradingEnv):
         super().__init__(env_config)
 
         self.frame_stack = env_config['frame_stack']
-        self.jump = env_config['jump']
         self.model = env_config['model']
 
-        self.total_frame = self.frame_stack * self.jump
+        self.total_frame = self.frame_stack
         self.frames = deque([], maxlen=self.total_frame)
         if self.model == 'mlp':
             self.obs_dim = self.observation_space.shape[0] * self.frame_stack
@@ -180,7 +187,7 @@ class FrameStack(TradingEnv):
     def observation(self):
         assert len(self.frames) == self.total_frame
         obs_stack = np.array(self.frames)
-        idx = np.arange(0, self.total_frame, self.jump)
+        idx = np.arange(0, self.total_frame)
         obs = obs_stack[idx]
         if self.model == 'mlp':
             return np.stack(obs, axis=0).reshape((self.obs_dim,))
@@ -191,21 +198,8 @@ class FrameStack(TradingEnv):
 if __name__ == "__main__":
 
     env_config = {
-        "data_v": 'r12',
-        "obs_dim": 14,
-        "action_scheme_id": 15,
-        "action_repeat": 1,
-        "target_scale": 1,
-        "score_scale": 2,
-        "profit_scale": 0,
-        "action_punish": 0.4,
-        "delay_len": 30,
-        "target_clip": 5,
-        "auto_follow": 0,
-        "burn_in": 3000,
+        'frame_stack': 3,
         "max_ep_len": 3000,
-        "frame_stack": 1,
-        "jump": 3,
         "model": 'mlp'
     }
 

@@ -26,7 +26,7 @@ parser.add_argument('--lr', type=float, default=5e-4)
 parser.add_argument('--entropy_coeff', type=float, default=0)
 parser.add_argument("--stop-timesteps", type=int, default=5e8)
 parser.add_argument('--exp_name', type=str, default='PPO')
-parser.add_argument('--num_stack', type=int, default=1)
+parser.add_argument('--num_stack', type=int, default=3)
 parser.add_argument('--restore', type=str, default=None, help="restore checkpoint_path")
 
 if __name__ == "__main__":
