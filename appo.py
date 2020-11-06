@@ -10,7 +10,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(ROOT)
-from trading_env import TradingEnv, FrameStack
+from trading_env_old import TradingEnv, FrameStack
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r12',

@@ -10,7 +10,9 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(ROOT)
-from trading_env import TradingEnv, FrameStack
+
+from trading_env_old import TradingEnv, FrameStack
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
@@ -18,7 +20,7 @@ parser.add_argument('--data_v', type=str, choices=['r12', 'r19'], default='r19',
 parser.add_argument('--hidden_sizes', nargs='+', type=int, default=[300, 400, 300])
 parser.add_argument('--lstm', type=bool, default=False)
 parser.add_argument('--gamma', type=float, default=0.998)
-parser.add_argument('--num_workers', type=int, default=120)
+parser.add_argument('--num_workers', type=int, default=1)
 parser.add_argument('--train_batch_size', type=int, default=9000)
 parser.add_argument('--target_scale', type=float, default=1)
 parser.add_argument('--score_scale', type=float, default=1.5)
@@ -43,7 +45,8 @@ parser.add_argument('--restore', type=str, default=None, help="restore checkpoin
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    ray.init()
+    # ray.init()
+    ray.init(address='auto', _redis_password='5241590000000000')
 
     if args.num_stack > 1:
         env = FrameStack
@@ -177,16 +180,16 @@ if __name__ == "__main__":
         # process. If you increase this, it will increase the Ray resource usage
         # of the trainer since evaluation workers are created separately from
         # rollout workers.
-        "evaluation_num_workers": 8,
-        # Optional custom eval function.
-        "custom_eval_function": custom_eval_function,
-        # Enable evaluation, once per training iteration.
-        "evaluation_interval": 150,
-        # Run 1 episodes each time evaluation runs.
-        "evaluation_num_episodes": 1,
-        "evaluation_config": {
-            "explore": False
-        }
+        # "evaluation_num_workers": 2,
+        # # Optional custom eval function.
+        # "custom_eval_function": custom_eval_function,
+        # # Enable evaluation, once per training iteration.
+        # "evaluation_interval": 150,
+        # # Run 1 episodes each time evaluation runs.
+        # "evaluation_num_episodes": 1,
+        # "evaluation_config": {
+        #     "explore": False
+        # }
 
         # === Advanced Resource Settings ===
         # Number of CPUs to allocate per worker.
@@ -222,4 +225,4 @@ if __name__ == "__main__":
              config=config,
              stop=stop)
 
-    ray.shutdown()
+    # ray.shutdown()

@@ -78,6 +78,36 @@ class MyCallbacks(DefaultCallbacks):
     #     episode.custom_metrics["num_batches"] += 1
 
 
+class NewCallbacks(DefaultCallbacks):
+    def on_episode_start(self, worker: RolloutWorker, base_env: BaseEnv,
+                         policies: Dict[str, Policy],
+                         episode: MultiAgentEpisode, **kwargs):
+        # print("episode {} started".format(episode.episode_id))
+        episode.user_data["profit"] = []
+        episode.user_data["num_no_action"] = 0
+
+    def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
+                        episode: MultiAgentEpisode, **kwargs):
+        if episode.last_info_for() is not None:
+            profit = episode.last_info_for()['profit']
+
+            episode.user_data["profit"].append(profit)
+
+            if episode.last_action_for() == 0:
+                episode.user_data["num_no_action"] += 1
+
+    def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
+                       policies: Dict[str, Policy], episode: MultiAgentEpisode,
+                       **kwargs):
+        profit = np.sum(episode.user_data["profit"])
+
+        # print("episode {} ended with length {}, target_bias:{}".format(
+        #     episode.episode_id, episode.length, ep_target_bias))
+
+        episode.custom_metrics["profit"] = profit
+        episode.custom_metrics["ep_num_no_action"] = episode.user_data["num_no_action"]
+
+
 def custom_eval_function(trainer, eval_workers):
     """Example of a custom evaluation function.
     Arguments:
@@ -112,7 +142,7 @@ def custom_eval_function(trainer, eval_workers):
     else:
         print("no custom_metrics")
     for i, worker in enumerate(eval_workers.remote_workers()):
-        worker.foreach_env.remote(lambda env: env.eval_set(start_day=51 + i))
+        worker.foreach_env.remote(lambda env: env.eval_set(start_day=91 + i))
 
     [w.sample.remote() for w in eval_workers.remote_workers()]
 
