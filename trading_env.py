@@ -122,7 +122,7 @@ class TradingEnv(gym.Env):
         num_deal = self.raw_obs[27]-last_target
         for _ in range(num_deal):
             deal = self.his_actions.pop(0)
-            reward += -deal[1]
+            reward += -deal[1]+0.1
 
         done = self.raw_obs[0] == 1 or self.ep_len == self.max_ep_len
         info = {

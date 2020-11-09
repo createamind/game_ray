@@ -84,7 +84,7 @@ class NewCallbacks(DefaultCallbacks):
                          episode: MultiAgentEpisode, **kwargs):
         # print("episode {} started".format(episode.episode_id))
         episode.user_data["profit"] = []
-        episode.user_data["num_no_action"] = 0
+        episode.user_data["actions"] = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0}
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
                         episode: MultiAgentEpisode, **kwargs):
@@ -92,9 +92,7 @@ class NewCallbacks(DefaultCallbacks):
             profit = episode.last_info_for()['profit']
 
             episode.user_data["profit"].append(profit)
-
-            if episode.last_action_for() == 0:
-                episode.user_data["num_no_action"] += 1
+            episode.user_data["actions"][episode.last_action_for()] += 1
 
     def on_episode_end(self, worker: RolloutWorker, base_env: BaseEnv,
                        policies: Dict[str, Policy], episode: MultiAgentEpisode,
@@ -105,7 +103,13 @@ class NewCallbacks(DefaultCallbacks):
         #     episode.episode_id, episode.length, ep_target_bias))
 
         episode.custom_metrics["profit"] = profit
-        episode.custom_metrics["ep_num_no_action"] = episode.user_data["num_no_action"]
+        episode.custom_metrics["action_1"] = episode.user_data["actions"][0]
+        episode.custom_metrics["action_2"] = episode.user_data["actions"][1]
+        episode.custom_metrics["action_3"] = episode.user_data["actions"][2]
+        episode.custom_metrics["action_4"] = episode.user_data["actions"][3]
+        episode.custom_metrics["action_5"] = episode.user_data["actions"][4]
+        episode.custom_metrics["action_6"] = episode.user_data["actions"][5]
+        episode.custom_metrics["action_7"] = episode.user_data["actions"][6]
 
 
 def custom_eval_function(trainer, eval_workers):
