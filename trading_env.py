@@ -63,13 +63,14 @@ class TradingEnv(gym.Env):
         self.start_price = None
         self.his_actions = []
 
-    def reset(self):
-
-        start_day = np.random.randint(1, self.trainning_set + 1, 1)[0]  # first self.trainning_set days
-        day_index = start_day - 1
-        max_point = self.data_len[day_index] - self.max_ep_len - 50
-        start_skip = int(np.random.randint(0, max_point, 1)[0])
-
+    def reset(self, start_day=None):
+        if start_day is None:
+            start_day = np.random.randint(1, self.trainning_set + 1, 1)[0]  # first self.trainning_set days
+            day_index = start_day - 1
+            max_point = self.data_len[day_index] - self.max_ep_len - 50
+            start_skip = int(np.random.randint(0, max_point, 1)[0])
+        else:
+            start_skip = 0
         start_info = {"date_index": "{} - {}".format(start_day, start_day), "skip_steps": start_skip}
         # print(start_info)
         if self.ctx:
@@ -91,6 +92,29 @@ class TradingEnv(gym.Env):
         obs = self._get_obs()
 
         return obs
+
+    def test_step(self, action):
+
+        self.expso.Action(self.ctx, int(action))
+        self.expso.Step(self.ctx)
+        self.expso.GetInfo(self.ctx, self.raw_obs, self.raw_obs_len)
+        self.expso.GetReward(self.ctx, self.rewards, self.rewards_len)
+        while self.raw_obs[0] == -1:
+            self.expso.Step(self.ctx)
+            self.expso.GetInfo(self.ctx, self.raw_obs, self.raw_obs_len)
+            self.expso.GetReward(self.ctx, self.rewards, self.rewards_len)
+            self.no_skip_step_len += 1
+        self.no_skip_step_len += 1
+        self.ep_len += 1
+        obs = self._get_obs()
+        reward = 0
+        done = self.raw_obs[0] == 1
+        info = {
+            "TradingDay": self.raw_obs[25],
+            "profit": self.rewards[1],
+        }
+
+        return obs, reward, done, info
 
     def step(self, action):
         action = int(action)
@@ -192,15 +216,15 @@ class FrameStack(TradingEnv):
             self.observation_space = Box(-np.inf, np.inf, shape=(self.frame_stack, self.observation_space.shape[0]),
                                          dtype=np.float32)
 
-    def reset(self):
-        ob = super().reset()
+    def reset(self, start_day=None):
+        ob = super().reset(start_day)
         ob = np.float32(ob)
         for _ in range(self.total_frame):
             self.frames.append(ob)
         return self.observation()
 
     def step(self, action):
-        ob, reward, done, info = super().step(action)
+        ob, reward, done, info = super().test_step(action)
         ob = np.float32(ob)
         self.frames.append(ob)
         return self.observation(), reward, done, info

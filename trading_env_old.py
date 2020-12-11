@@ -360,7 +360,7 @@ class TradingEnv(gym.Env):
 
         return schemes[action_scheme_id]
 
-    def policy_069(self):  # actions: 0,6,9
+    def auto_follow(self):  # actions: 0,6,9
         if self.raw_obs[26] > self.raw_obs[27]:
             action = 6
         elif self.raw_obs[26] < self.raw_obs[27]:
@@ -378,10 +378,9 @@ class FrameStack(TradingEnv):
         super().__init__(env_config)
 
         self.frame_stack = env_config['frame_stack']
-        self.jump = env_config['jump']
         self.model = env_config['model']
 
-        self.total_frame = self.frame_stack * self.jump
+        self.total_frame = self.frame_stack
         self.frames = deque([], maxlen=self.total_frame)
         if self.model == 'mlp':
             self.obs_dim = self.observation_space.shape[0] * self.frame_stack
@@ -406,13 +405,12 @@ class FrameStack(TradingEnv):
     def observation(self):
         assert len(self.frames) == self.total_frame
         obs_stack = np.array(self.frames)
-        idx = np.arange(0, self.total_frame, self.jump)
+        idx = np.arange(0, self.total_frame)
         obs = obs_stack[idx]
         if self.model == 'mlp':
             return np.stack(obs, axis=0).reshape((self.obs_dim,))
         else:
             return obs
-
 
 if __name__ == "__main__":
 

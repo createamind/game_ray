@@ -154,3 +154,15 @@ def custom_eval_function(trainer, eval_workers):
     print("evaluation time: {:.2f}s, {:.2f}min".format(total_time, total_time / 60))
     print("*************** Evaluation end. ***************")
     return metrics
+
+
+def auto_follow_action(target, actual_target, auto_th):
+
+    if abs(target-actual_target) > auto_th:
+        if target-actual_target > 0:
+            action = 4
+        else:
+            action = 11
+    else:
+        action = 0
+    return action
